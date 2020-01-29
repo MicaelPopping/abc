@@ -91,6 +91,10 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
     ProgressBar * pProgress;
     Abc_Obj_t * pNode, * pFanin;
     int i, k;
+    // Minhas variaveis.
+    word Thruth;
+    int pw[3];
+    int t;
 
     // write the PIs
     fprintf( pFile, "INORDER =" );
@@ -115,7 +119,20 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
         // write the formula
         Hop_ObjPrintEqn( pFile, (Hop_Obj_t *)pNode->pData, vLevels, 0 );
         fprintf( pFile, ";\n" );
+
+        // Minhas alterações.
+        Thruth = Hop_ManComputeTruth6((Hop_Man_t*) pNtk->pManFunc, (Hop_Obj_t*) pNode->pData, Abc_ObjFaninNum(pNode));
+        t = Extra_ThreshHeuristic(&Thruth, Abc_ObjFaninNum(pNode), pw);
+
+        printf("\n\nResultados\n");
+        printf("p[0] = %d\n", pw[0]);
+        printf("p[1] = %d\n", pw[1]);
+        printf("p[2] = %d\n", pw[2]);
+        printf("T = %d", t);
     }
+
+    printf("\n\n");
+    
     Extra_ProgressBarStop( pProgress );
     Vec_VecFree( vLevels );
 }
