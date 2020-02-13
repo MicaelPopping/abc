@@ -96,6 +96,7 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
     int pw[3];
     int t;
 
+    /*
     // write the PIs
     fprintf( pFile, "INORDER =" );
     Io_NtkWriteEqnCis( pFile, pNtk );
@@ -105,6 +106,21 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
     fprintf( pFile, "OUTORDER =" );
     Io_NtkWriteEqnCos( pFile, pNtk );
     fprintf( pFile, ";\n" );
+    */
+    // Imprime cabeçalho
+    int maxVariableIndex;
+    int numInputs;
+    int numLatches;
+    int numOutputs;
+    int numThresholdGates;
+
+    numInputs = Abc_NtkCiNum(pNtk);
+    numLatches = Abc_NtkLatchNum(pNtk);
+    numOutputs = Abc_NtkCoNum(pNtk);
+    numThresholdGates = Abc_NtkNodeNum(pNtk);
+    maxVariableIndex = numInputs + numThresholdGates;
+
+    fprintf(pFile, "tlg %d %d %d %d %d\n", maxVariableIndex, numInputs, numLatches, numOutputs, numThresholdGates);
 
     // write each internal node
     vLevels = Vec_VecAlloc( 10 );
@@ -150,7 +166,10 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
 
 ***********************************************************************/
 void Io_NtkWriteEqnCis( FILE * pFile, Abc_Ntk_t * pNtk )
-{
+{   
+
+    // Função que imprime o cabeçalho.
+    /*
     Abc_Obj_t * pTerm, * pNet;
     int LineLength;
     int AddedLength;
@@ -176,6 +195,7 @@ void Io_NtkWriteEqnCis( FILE * pFile, Abc_Ntk_t * pNtk )
         LineLength += AddedLength;
         NameCounter++;
     }
+    */
 }
 
 /**Function*************************************************************
