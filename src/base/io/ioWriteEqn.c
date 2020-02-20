@@ -87,7 +87,8 @@ void Io_WriteEqn( Abc_Ntk_t * pNtk, char * pFileName )
 ***********************************************************************/
 void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
 {
-    Vec_Vec_t * vLevels;
+
+        Vec_Vec_t * vLevels;
     ProgressBar * pProgress;
     Abc_Obj_t * pNode, * pFanin;
     int i, k;
@@ -96,17 +97,6 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
     int pw[3];
     int t;
 
-    /*
-    // write the PIs
-    fprintf( pFile, "INORDER =" );
-    Io_NtkWriteEqnCis( pFile, pNtk );
-    fprintf( pFile, ";\n" );
-
-    // write the POs
-    fprintf( pFile, "OUTORDER =" );
-    Io_NtkWriteEqnCos( pFile, pNtk );
-    fprintf( pFile, ";\n" );
-    */
     // Imprime cabeçalho
     int maxVariableIndex;
     int numInputs;
@@ -147,10 +137,45 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
         printf("T = %d", t);
     }
 
-    printf("\n\n");
+    printf("\n");
     
     Extra_ProgressBarStop( pProgress );
     Vec_VecFree( vLevels );
+
+    /*
+    Vec_Vec_t * vLevels;
+    ProgressBar * pProgress;
+    Abc_Obj_t * pNode, * pFanin;
+    int i, k;
+
+    // write the PIs
+    fprintf( pFile, "INORDER =" );
+    Io_NtkWriteEqnCis( pFile, pNtk );
+    fprintf( pFile, ";\n" );
+
+    // write the POs
+    fprintf( pFile, "OUTORDER =" );
+    Io_NtkWriteEqnCos( pFile, pNtk );
+    fprintf( pFile, ";\n" );
+
+    // write each internal node
+    vLevels = Vec_VecAlloc( 10 );
+    pProgress = Extra_ProgressBarStart( stdout, Abc_NtkObjNumMax(pNtk) );
+    Abc_NtkForEachNode( pNtk, pNode, i )
+    {
+        Extra_ProgressBarUpdate( pProgress, i, NULL );
+        fprintf( pFile, "%s = ", Abc_ObjName(Abc_ObjFanout0(pNode)) );
+        // set the input names
+        Abc_ObjForEachFanin( pNode, pFanin, k )
+            Hop_IthVar((Hop_Man_t *)pNtk->pManFunc, k)->pData = Abc_ObjName(pFanin);
+        // write the formula
+        Hop_ObjPrintEqn( pFile, (Hop_Obj_t *)pNode->pData, vLevels, 0 );
+        fprintf( pFile, ";\n" );
+    }
+    
+    Extra_ProgressBarStop( pProgress );
+    Vec_VecFree( vLevels );
+    */
 }
 
 
