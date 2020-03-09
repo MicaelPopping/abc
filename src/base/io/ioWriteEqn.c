@@ -70,7 +70,7 @@ void Io_WriteEqn( Abc_Ntk_t * pNtk, char * pFileName )
 
     // write the equations for the network
     Io_NtkWriteEqnOne( pFile, pNtk );
-    fprintf( pFile, "\n" );
+    //fprintf( pFile, "\n" );
     fclose( pFile );
 }
 
@@ -87,17 +87,19 @@ void Io_WriteEqn( Abc_Ntk_t * pNtk, char * pFileName )
 ***********************************************************************/
 void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
 {
-
-        Vec_Vec_t * vLevels;
+    Vec_Vec_t * vLevels;
     ProgressBar * pProgress;
     Abc_Obj_t * pNode, * pFanin;
     int i, k;
-    // Minhas variaveis.
+    // Minhas variaveis de teste.
     word Thruth;
     int pw[3];
     int t;
 
-    // Imprime cabeçalho
+    /*
+    Io_NtkWriteTlcdHeader() **************************************************
+    **************************************************************************
+    */
     int maxVariableIndex;
     int numInputs;
     int numLatches;
@@ -111,6 +113,12 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
     maxVariableIndex = numInputs + numThresholdGates;
 
     fprintf(pFile, "tlg %d %d %d %d %d\n", maxVariableIndex, numInputs, numLatches, numOutputs, numThresholdGates);
+    /*************************************************************************
+    *************************************************************************/
+
+    // Escrevendo as entradas e saidas.
+    Io_NtkWriteEqnCis( pFile, pNtk );
+    Io_NtkWriteEqnCos( pFile, pNtk );
 
     // write each internal node
     vLevels = Vec_VecAlloc( 10 );
@@ -118,32 +126,33 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
     Abc_NtkForEachNode( pNtk, pNode, i )
     {
         Extra_ProgressBarUpdate( pProgress, i, NULL );
-        fprintf( pFile, "%s = ", Abc_ObjName(Abc_ObjFanout0(pNode)) );
-        // set the input names
-        Abc_ObjForEachFanin( pNode, pFanin, k )
-            Hop_IthVar((Hop_Man_t *)pNtk->pManFunc, k)->pData = Abc_ObjName(pFanin);
-        // write the formula
-        Hop_ObjPrintEqn( pFile, (Hop_Obj_t *)pNode->pData, vLevels, 0 );
-        fprintf( pFile, ";\n" );
+        fprintf( pFile, "%s", Abc_ObjName(Abc_ObjFanout0(pNode)) );
 
-        // Minhas alterações.
         Thruth = Hop_ManComputeTruth6((Hop_Man_t*) pNtk->pManFunc, (Hop_Obj_t*) pNode->pData, Abc_ObjFaninNum(pNode));
         t = Extra_ThreshHeuristic(&Thruth, Abc_ObjFaninNum(pNode), pw);
 
-        printf("\n\nResultados\n");
+        fprintf(pFile, " %d %d %d", pw[0], pw[1], pw[2]);
+
+        // set the input names
+        Abc_ObjForEachFanin( pNode, pFanin, k ) {
+            Hop_IthVar((Hop_Man_t *)pNtk->pManFunc, k)->pData = Abc_ObjName(pFanin);
+            fprintf(pFile, " %s", Abc_ObjName(pFanin));
+            /*fprintf(pFile, "teste[%d] = %s\n", k, Abc_ObjName(pFanin));*/
+        }
+
+        fprintf(pFile, "\n");
+        
+        /*printf("\n\nResultados\n");
         printf("p[0] = %d\n", pw[0]);
         printf("p[1] = %d\n", pw[1]);
         printf("p[2] = %d\n", pw[2]);
-        printf("T = %d", t);
+        printf("T = %d", t);*/
     }
-
-    printf("\n");
     
     Extra_ProgressBarStop( pProgress );
     Vec_VecFree( vLevels );
 
-    /*
-    Vec_Vec_t * vLevels;
+    /*Vec_Vec_t * vLevels;
     ProgressBar * pProgress;
     Abc_Obj_t * pNode, * pFanin;
     int i, k;
@@ -174,8 +183,7 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
     }
     
     Extra_ProgressBarStop( pProgress );
-    Vec_VecFree( vLevels );
-    */
+    Vec_VecFree( vLevels );*/
 }
 
 
@@ -192,10 +200,17 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
 ***********************************************************************/
 void Io_NtkWriteEqnCis( FILE * pFile, Abc_Ntk_t * pNtk )
 {   
-
-    // Função que imprime o cabeçalho.
-    /*
     Abc_Obj_t * pTerm, * pNet;
+    int i;
+
+    Abc_NtkForEachCi( pNtk, pTerm, i )
+    {
+        pNet = Abc_ObjFanout0(pTerm);
+        // get the line length after this name is written
+        fprintf( pFile, "%s\n", Abc_ObjName(pNet) );
+    }
+
+    /*Abc_Obj_t * pTerm, * pNet;
     int LineLength;
     int AddedLength;
     int NameCounter;
@@ -219,8 +234,7 @@ void Io_NtkWriteEqnCis( FILE * pFile, Abc_Ntk_t * pNtk )
         fprintf( pFile, " %s", Abc_ObjName(pNet) );
         LineLength += AddedLength;
         NameCounter++;
-    }
-    */
+    }*/
 }
 
 /**Function*************************************************************
@@ -237,6 +251,16 @@ void Io_NtkWriteEqnCis( FILE * pFile, Abc_Ntk_t * pNtk )
 void Io_NtkWriteEqnCos( FILE * pFile, Abc_Ntk_t * pNtk )
 {
     Abc_Obj_t * pTerm, * pNet;
+    int i;
+
+    Abc_NtkForEachCo( pNtk, pTerm, i )
+    {
+        pNet = Abc_ObjFanin0(pTerm);
+        // get the line length after this name is written
+        fprintf( pFile, "%s\n", Abc_ObjName(pNet) );
+    }
+    
+    /*Abc_Obj_t * pTerm, * pNet;
     int LineLength;
     int AddedLength;
     int NameCounter;
@@ -260,7 +284,7 @@ void Io_NtkWriteEqnCos( FILE * pFile, Abc_Ntk_t * pNtk )
         fprintf( pFile, " %s", Abc_ObjName(pNet) );
         LineLength += AddedLength;
         NameCounter++;
-    }
+    }*/
 }
 
 /**Function*************************************************************
