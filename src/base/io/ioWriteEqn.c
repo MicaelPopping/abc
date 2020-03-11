@@ -131,7 +131,14 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
         Thruth = Hop_ManComputeTruth6((Hop_Man_t*) pNtk->pManFunc, (Hop_Obj_t*) pNode->pData, Abc_ObjFaninNum(pNode));
         t = Extra_ThreshHeuristic(&Thruth, Abc_ObjFaninNum(pNode), pw);
 
-        fprintf(pFile, " %d %d %d", pw[0], pw[1], pw[2]);
+        for(int j = 0; j < Abc_ObjFaninNum(pNode); j++) {
+
+            fprintf(pFile, " %d", pw[j]);
+        }
+
+        fprintf(pFile, " %d", t);
+
+        //fprintf(pFile, " %d %d %d", pw[0], pw[1], pw[2]);
 
         // set the input names
         Abc_ObjForEachFanin( pNode, pFanin, k ) {
