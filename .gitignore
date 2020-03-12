@@ -59,3 +59,7 @@ tags
 
 /cmake
 /cscope
+
+# My changes. Don't forget to remove!!!
+.DS_Store
+src/.DS_Store
