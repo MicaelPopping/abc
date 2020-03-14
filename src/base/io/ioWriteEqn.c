@@ -49,6 +49,10 @@ static int Io_NtkWriteEqnCheck( Abc_Ntk_t * pNtk );
 ***********************************************************************/
 void Io_WriteEqn( Abc_Ntk_t * pNtk, char * pFileName )
 {
+    // Don't forget to remove!!!
+    Io_WriteTlcd(pNtk, pFileName);
+    return;
+
     FILE * pFile;
 
     assert( Abc_NtkIsAigNetlist(pNtk) );

@@ -68,3 +68,4 @@ src/.DS_Store
 *.blif
 *.eqn
 *.tlcd
+*.txt

@@ -1,20 +1,20 @@
 /**CFile****************************************************************
 
-  FileName    [ioWriteEqn.c]
+  FileName    [ioWriteTlcd.c]
 
   SystemName  [ABC: Logic synthesis and verification system.]
 
   PackageName [Command processing package.]
 
-  Synopsis    [Procedures to write equation representation of the network.]
+  Synopsis    []
 
-  Author      [Alan Mishchenko]
+  Author      [Micael Popping]
   
-  Affiliation [UC Berkeley]
+  Affiliation [UFPel - Universidade Federal de Pelotas]
 
-  Date        [Ver. 1.0. Started - June 20, 2005.]
+  Date        []
 
-  Revision    [$Id: ioWriteEqn.c,v 1.00 2005/06/20 00:00:00 alanmi Exp $]
+  Revision    []
 
 ***********************************************************************/
 
@@ -27,10 +27,11 @@ ABC_NAMESPACE_IMPL_START
 ///                        DECLARATIONS                              ///
 ////////////////////////////////////////////////////////////////////////
 
-static void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk );
-static void Io_NtkWriteEqnCis( FILE * pFile, Abc_Ntk_t * pNtk );
-static void Io_NtkWriteEqnCos( FILE * pFile, Abc_Ntk_t * pNtk );
-static int Io_NtkWriteEqnCheck( Abc_Ntk_t * pNtk );
+static void Io_NtkWriteTlcdOne( FILE * pFile, Abc_Ntk_t * pNtk );
+static void Io_NtkWriteTlcdHeader( FILE * pFile, Abc_Ntk_t * pNtk );
+static void Io_NtkWriteTlcdCis( FILE * pFile, Abc_Ntk_t * pNtk );
+static void Io_NtkWriteTlcdCos( FILE * pFile, Abc_Ntk_t * pNtk );
+static int  Io_NtkWriteTlcdCheck( Abc_Ntk_t * pNtk );
 
 ////////////////////////////////////////////////////////////////////////
 ///                     FUNCTION DEFINITIONS                         ///
@@ -38,7 +39,7 @@ static int Io_NtkWriteEqnCheck( Abc_Ntk_t * pNtk );
 
 /**Function*************************************************************
 
-  Synopsis    [Writes the logic network in the equation format.]
+  Synopsis    []
 
   Description []
   
@@ -47,7 +48,7 @@ static int Io_NtkWriteEqnCheck( Abc_Ntk_t * pNtk );
   SeeAlso     []
 
 ***********************************************************************/
-void Io_WriteEqn( Abc_Ntk_t * pNtk, char * pFileName )
+void Io_WriteTlcd( Abc_Ntk_t * pNtk, char * pFileName )
 {
     FILE * pFile;
 
@@ -55,21 +56,21 @@ void Io_WriteEqn( Abc_Ntk_t * pNtk, char * pFileName )
     if ( Abc_NtkLatchNum(pNtk) > 0 )
         printf( "Warning: only combinational portion is being written.\n" );
 
-    // check that the names are fine for the EQN format
-    if ( !Io_NtkWriteEqnCheck(pNtk) )
+    // check that the names are fine for the TLCD format
+    if ( !Io_NtkWriteTlcdCheck(pNtk) )
         return;
 
     // start the output stream
     pFile = fopen( pFileName, "w" );
     if ( pFile == NULL )
     {
-        fprintf( stdout, "Io_WriteEqn(): Cannot open the output file \"%s\".\n", pFileName );
+        fprintf( stdout, "Io_WriteTlcd(): Cannot open the output file \"%s\".\n", pFileName );
         return;
     }
     fprintf( pFile, "# Equations for \"%s\" written by ABC on %s\n", pNtk->pName, Extra_TimeStamp() );
 
     // write the equations for the network
-    Io_NtkWriteEqnOne( pFile, pNtk );
+    Io_NtkWriteTlcdOne( pFile, pNtk );
     fprintf( pFile, "\n" );
     fclose( pFile );
 }
@@ -85,22 +86,21 @@ void Io_WriteEqn( Abc_Ntk_t * pNtk, char * pFileName )
   SeeAlso     []
 
 ***********************************************************************/
-void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
+void Io_NtkWriteTlcdOne( FILE * pFile, Abc_Ntk_t * pNtk )
 {
     Vec_Vec_t * vLevels;
     ProgressBar * pProgress;
     Abc_Obj_t * pNode, * pFanin;
-    int i, k;
+    word thruth;
+    int t, pW[3], i, k;
+
+    Io_NtkWriteTlcdHeader( pFile, pNtk);
 
     // write the PIs
-    fprintf( pFile, "INORDER =" );
-    Io_NtkWriteEqnCis( pFile, pNtk );
-    fprintf( pFile, ";\n" );
+    Io_NtkWriteTlcdCis( pFile, pNtk );
 
     // write the POs
-    fprintf( pFile, "OUTORDER =" );
-    Io_NtkWriteEqnCos( pFile, pNtk );
-    fprintf( pFile, ";\n" );
+    Io_NtkWriteTlcdCos( pFile, pNtk );
 
     // write each internal node
     vLevels = Vec_VecAlloc( 10 );
@@ -108,18 +108,44 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
     Abc_NtkForEachNode( pNtk, pNode, i )
     {
         Extra_ProgressBarUpdate( pProgress, i, NULL );
-        fprintf( pFile, "%s = ", Abc_ObjName(Abc_ObjFanout0(pNode)) );
+        fprintf( pFile, "%s", Abc_ObjName(Abc_ObjFanout0(pNode)) );
+        // calculating the thresholds gates
+        thruth = Hop_ManComputeTruth6((Hop_Man_t*) pNtk->pManFunc, (Hop_Obj_t*) pNode->pData, Abc_ObjFaninNum(pNode));
+        t = Extra_ThreshHeuristic(&thruth, Abc_ObjFaninNum(pNode), pW);
+        // inserting the weights
+        for(int j = 0; j < Abc_ObjFaninNum(pNode); j++)
+            fprintf(pFile, " %d", pW[j]);
         // set the input names
         Abc_ObjForEachFanin( pNode, pFanin, k )
             Hop_IthVar((Hop_Man_t *)pNtk->pManFunc, k)->pData = Abc_ObjName(pFanin);
         // write the formula
-        Hop_ObjPrintEqn( pFile, (Hop_Obj_t *)pNode->pData, vLevels, 0 );
-        fprintf( pFile, ";\n" );
+        //Hop_ObjPrintTlcd( pFile, (Hop_Obj_t *)pNode->pData, vLevels, 0 );
     }
     Extra_ProgressBarStop( pProgress );
     Vec_VecFree( vLevels );
 }
 
+/**Function*************************************************************
+
+  Synopsis    []
+
+  Description []
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+void Io_NtkWriteTlcdHeader( FILE * pFile, Abc_Ntk_t * pNtk )
+{
+    int numInputs = Abc_NtkCiNum(pNtk);
+    int numThresholdGates = Abc_NtkNodeNum(pNtk);
+    int maxVariableIndex = numInputs + numThresholdGates;
+    int numLatches = Abc_NtkLatchNum(pNtk);
+    int numOutputs = Abc_NtkCoNum(pNtk);
+
+    fprintf(pFile, "tlg %d %d %d %d %d\n", maxVariableIndex, numInputs, numLatches, numOutputs, numThresholdGates);
+}
 
 /**Function*************************************************************
 
@@ -132,32 +158,16 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
   SeeAlso     []
 
 ***********************************************************************/
-void Io_NtkWriteEqnCis( FILE * pFile, Abc_Ntk_t * pNtk )
+void Io_NtkWriteTlcdCis( FILE * pFile, Abc_Ntk_t * pNtk )
 {
     Abc_Obj_t * pTerm, * pNet;
-    int LineLength;
-    int AddedLength;
-    int NameCounter;
     int i;
-
-    LineLength  = 9;
-    NameCounter = 0;
 
     Abc_NtkForEachCi( pNtk, pTerm, i )
     {
         pNet = Abc_ObjFanout0(pTerm);
-        // get the line length after this name is written
-        AddedLength = strlen(Abc_ObjName(pNet)) + 1;
-        if ( NameCounter && LineLength + AddedLength + 3 > IO_WRITE_LINE_LENGTH )
-        { // write the line extender
-            fprintf( pFile, " \n" );
-            // reset the line length
-            LineLength  = 0;
-            NameCounter = 0;
-        }
-        fprintf( pFile, " %s", Abc_ObjName(pNet) );
-        LineLength += AddedLength;
-        NameCounter++;
+
+        fprintf( pFile, "%s\n", Abc_ObjName(pNet) );
     }
 }
 
@@ -172,32 +182,16 @@ void Io_NtkWriteEqnCis( FILE * pFile, Abc_Ntk_t * pNtk )
   SeeAlso     []
 
 ***********************************************************************/
-void Io_NtkWriteEqnCos( FILE * pFile, Abc_Ntk_t * pNtk )
+void Io_NtkWriteTlcdCos( FILE * pFile, Abc_Ntk_t * pNtk )
 {
     Abc_Obj_t * pTerm, * pNet;
-    int LineLength;
-    int AddedLength;
-    int NameCounter;
     int i;
-
-    LineLength  = 10;
-    NameCounter = 0;
 
     Abc_NtkForEachCo( pNtk, pTerm, i )
     {
         pNet = Abc_ObjFanin0(pTerm);
-        // get the line length after this name is written
-        AddedLength = strlen(Abc_ObjName(pNet)) + 1;
-        if ( NameCounter && LineLength + AddedLength + 3 > IO_WRITE_LINE_LENGTH )
-        { // write the line extender
-            fprintf( pFile, " \n" );
-            // reset the line length
-            LineLength  = 0;
-            NameCounter = 0;
-        }
-        fprintf( pFile, " %s", Abc_ObjName(pNet) );
-        LineLength += AddedLength;
-        NameCounter++;
+        
+        fprintf( pFile, "%s\n", Abc_ObjName(pNet) );
     }
 }
 
@@ -212,7 +206,7 @@ void Io_NtkWriteEqnCos( FILE * pFile, Abc_Ntk_t * pNtk )
   SeeAlso     []
 
 ***********************************************************************/
-int Io_NtkWriteEqnCheck( Abc_Ntk_t * pNtk )
+int Io_NtkWriteTlcdCheck( Abc_Ntk_t * pNtk )
 {
     Abc_Obj_t * pObj;
     char * pName = NULL;
