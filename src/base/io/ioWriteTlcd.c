@@ -71,7 +71,6 @@ void Io_WriteTlcd( Abc_Ntk_t * pNtk, char * pFileName )
 
     // write the equations for the network
     Io_NtkWriteTlcdOne( pFile, pNtk );
-    fprintf( pFile, "\n" );
     fclose( pFile );
 }
 
@@ -113,7 +112,7 @@ void Io_NtkWriteTlcdOne( FILE * pFile, Abc_Ntk_t * pNtk )
         thruth = Hop_ManComputeTruth6((Hop_Man_t*) pNtk->pManFunc, (Hop_Obj_t*) pNode->pData, Abc_ObjFaninNum(pNode));
         t = Extra_ThreshHeuristic(&thruth, Abc_ObjFaninNum(pNode), pW);
         // inserting the weights and treshold
-        for(int j = 0; j < Abc_ObjFaninNum(pNode); j++)
+        for(int j = Abc_ObjFaninNum(pNode) - 1; j >= 0; j--)
             fprintf(pFile, " %d", pW[j]);
         fprintf(pFile, " %d", t);
         // set the input names

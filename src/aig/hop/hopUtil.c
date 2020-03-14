@@ -605,14 +605,8 @@ void Hop_ObjPrintTlcd( FILE * pFile, Hop_Obj_t * pObj, Vec_Vec_t * vLevels, int 
     Vec_VecExpand( vLevels, Level );
     vSuper = Vec_VecEntry(vLevels, Level);
     Hop_ObjCollectMulti( pObj, vSuper );
-    //fprintf( pFile, "%s", (Level==0? "" : "(") );
     Vec_PtrForEachEntry( Hop_Obj_t *, vSuper, pFanin, i )
-    {
         Hop_ObjPrintTlcd( pFile, Hop_NotCond(pFanin, fCompl), vLevels, Level+1 );
-        //if ( i < Vec_PtrSize(vSuper) - 1 )
-            //fprintf( pFile, " %s ", fCompl? "+" : "*" );
-    }
-    //fprintf( pFile, "%s", (Level==0? "" : ")") );
     return;
 }
 
