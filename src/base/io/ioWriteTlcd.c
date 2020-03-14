@@ -112,14 +112,17 @@ void Io_NtkWriteTlcdOne( FILE * pFile, Abc_Ntk_t * pNtk )
         // calculating the thresholds gates
         thruth = Hop_ManComputeTruth6((Hop_Man_t*) pNtk->pManFunc, (Hop_Obj_t*) pNode->pData, Abc_ObjFaninNum(pNode));
         t = Extra_ThreshHeuristic(&thruth, Abc_ObjFaninNum(pNode), pW);
-        // inserting the weights
+        // inserting the weights and treshold
         for(int j = 0; j < Abc_ObjFaninNum(pNode); j++)
             fprintf(pFile, " %d", pW[j]);
+        fprintf(pFile, " %d", t);
         // set the input names
         Abc_ObjForEachFanin( pNode, pFanin, k )
             Hop_IthVar((Hop_Man_t *)pNtk->pManFunc, k)->pData = Abc_ObjName(pFanin);
         // write the formula
-        //Hop_ObjPrintTlcd( pFile, (Hop_Obj_t *)pNode->pData, vLevels, 0 );
+        Hop_ObjPrintTlcd( pFile, (Hop_Obj_t *)pNode->pData, vLevels, 0 );
+        // end tlg
+        fprintf(pFile, "\n");
     }
     Extra_ProgressBarStop( pProgress );
     Vec_VecFree( vLevels );

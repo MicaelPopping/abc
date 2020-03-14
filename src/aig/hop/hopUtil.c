@@ -569,6 +569,53 @@ void Hop_ManDumpBlif( Hop_Man_t * p, char * pFileName )
     Vec_PtrFree( vNodes );
 }
 
+/**Function*************************************************************
+
+  Synopsis    [Prints Eqn formula for the AIG rooted at this node.]
+
+  Description [The formula is in terms of PIs, which should have
+  their names assigned in pObj->pData fields.]
+               
+  SideEffects []
+
+  SeeAlso     []
+
+***********************************************************************/
+void Hop_ObjPrintTlcd( FILE * pFile, Hop_Obj_t * pObj, Vec_Vec_t * vLevels, int Level )
+{
+    Vec_Ptr_t * vSuper;
+    Hop_Obj_t * pFanin;
+    int fCompl, i;
+    // store the complemented attribute
+    fCompl = Hop_IsComplement(pObj);
+    pObj = Hop_Regular(pObj);
+    // constant case
+    if ( Hop_ObjIsConst1(pObj) )
+    {
+        fprintf( pFile, "%d", !fCompl );
+        return;
+    }
+    // PI case
+    if ( Hop_ObjIsPi(pObj) )
+    {
+        fprintf( pFile, " %s%s", fCompl? "!" : "", (char*)pObj->pData );
+        return;
+    }
+    // AND case
+    Vec_VecExpand( vLevels, Level );
+    vSuper = Vec_VecEntry(vLevels, Level);
+    Hop_ObjCollectMulti( pObj, vSuper );
+    //fprintf( pFile, "%s", (Level==0? "" : "(") );
+    Vec_PtrForEachEntry( Hop_Obj_t *, vSuper, pFanin, i )
+    {
+        Hop_ObjPrintTlcd( pFile, Hop_NotCond(pFanin, fCompl), vLevels, Level+1 );
+        //if ( i < Vec_PtrSize(vSuper) - 1 )
+            //fprintf( pFile, " %s ", fCompl? "+" : "*" );
+    }
+    //fprintf( pFile, "%s", (Level==0? "" : ")") );
+    return;
+}
+
 ////////////////////////////////////////////////////////////////////////
 ///                       END OF FILE                                ///
 ////////////////////////////////////////////////////////////////////////

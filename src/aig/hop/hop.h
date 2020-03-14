@@ -341,6 +341,7 @@ extern void            Hop_ObjPrintVerilog( FILE * pFile, Hop_Obj_t * pObj, Vec_
 extern void            Hop_ObjPrintVerbose( Hop_Obj_t * pObj, int fHaig );
 extern void            Hop_ManPrintVerbose( Hop_Man_t * p, int fHaig );
 extern void            Hop_ManDumpBlif( Hop_Man_t * p, char * pFileName );
+extern void            Hop_ObjPrintTlcd( FILE * pFile, Hop_Obj_t * pObj, Vec_Vec_t * vLevels, int Level );
 
 
 
