@@ -127,7 +127,7 @@ void Io_NtkWriteEqnOne( FILE * pFile, Abc_Ntk_t * pNtk )
     {
         Extra_ProgressBarUpdate( pProgress, i, NULL );
         fprintf( pFile, "%s", Abc_ObjName(Abc_ObjFanout0(pNode)) );
-
+        //
         Thruth = Hop_ManComputeTruth6((Hop_Man_t*) pNtk->pManFunc, (Hop_Obj_t*) pNode->pData, Abc_ObjFaninNum(pNode));
         t = Extra_ThreshHeuristic(&Thruth, Abc_ObjFaninNum(pNode), pw);
 
