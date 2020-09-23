@@ -1107,6 +1107,10 @@ SOURCE=.\src\base\acb\acbSets.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\base\acb\acbTest.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\base\acb\acbUtil.c
 # End Source File
 # End Group
@@ -4863,6 +4867,10 @@ SOURCE=.\src\aig\gia\giaFx.c
 # End Source File
 # Begin Source File
 
+SOURCE=.\src\aig\gia\giaGen.c
+# End Source File
+# Begin Source File
+
 SOURCE=.\src\aig\gia\giaGig.c
 # End Source File
 # Begin Source File
@@ -5032,6 +5040,14 @@ SOURCE=.\src\aig\gia\giaSim2.c
 # Begin Source File
 
 SOURCE=.\src\aig\gia\giaSim4.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\aig\gia\giaSim5.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\src\aig\gia\giaSimBase.c
 # End Source File
 # Begin Source File
 

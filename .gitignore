@@ -60,6 +60,17 @@ tags
 /cmake
 /cscope
 
+<<<<<<< HEAD
 *.aig
 *.eqn
 *.txt
+=======
+# My changes. Don't forget to remove!!!
+.DS_Store
+src/.DS_Store
+
+*.aig
+*.blif
+*.eqn
+*.tlcd
+>>>>>>> 82e2be64537b7a608cbae26edbda44aab87ccba8

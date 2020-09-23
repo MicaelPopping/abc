@@ -33,6 +33,7 @@ SRC +=    src/aig/gia/giaAig.c \
     src/aig/gia/giaFrames.c \
     src/aig/gia/giaFront.c \
     src/aig/gia/giaFx.c \
+    src/aig/gia/giaGen.c \
     src/aig/gia/giaGig.c \
     src/aig/gia/giaGlitch.c \
     src/aig/gia/giaHash.c \
@@ -75,6 +76,8 @@ SRC +=    src/aig/gia/giaAig.c \
     src/aig/gia/giaSim.c \
     src/aig/gia/giaSim2.c \
     src/aig/gia/giaSim4.c \
+    src/aig/gia/giaSim5.c \
+    src/aig/gia/giaSimBase.c \
     src/aig/gia/giaSort.c \
     src/aig/gia/giaSpeedup.c \
     src/aig/gia/giaSplit.c \

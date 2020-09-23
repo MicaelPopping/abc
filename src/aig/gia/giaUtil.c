@@ -2223,7 +2223,7 @@ void Gia_ManUpdateCopy( Vec_Int_t * vCopy, Gia_Man_t * p )
 
 /**Function*************************************************************
 
-  Synopsis    [Populate internal simulation info.]
+  Synopsis    []
 
   Description []
                
@@ -2232,155 +2232,62 @@ void Gia_ManUpdateCopy( Vec_Int_t * vCopy, Gia_Man_t * p )
   SeeAlso     []
 
 ***********************************************************************/
-static inline word * Gia_ManObjSim( Gia_Man_t * p, int iObj )
+Gia_Man_t * Gia_ManDupWithMuxPos( Gia_Man_t * p )
 {
-    return Vec_WrdEntryP( p->vSims, p->nSimWords * iObj );
-}
-static inline void Gia_ManObjSimPi( Gia_Man_t * p, int iObj )
-{
-    int w;
-    word * pSim = Gia_ManObjSim( p, iObj );
-    for ( w = 0; w < p->nSimWords; w++ )
-        pSim[w] = Gia_ManRandomW( 0 );
-//    pSim[0] <<= 1;
-}
-static inline void Gia_ManObjSimPo( Gia_Man_t * p, int iObj )
-{
-    int w;
-    Gia_Obj_t * pObj = Gia_ManObj( p, iObj );
-    word * pSimCo  = Gia_ManObjSim( p, iObj );
-    word * pSimDri = Gia_ManObjSim( p, Gia_ObjFaninId0(pObj, iObj) );
-    if ( Gia_ObjFaninC0(pObj) )
-        for ( w = 0; w < p->nSimWords; w++ )
-            pSimCo[w] = ~pSimDri[w];
-    else
-        for ( w = 0; w < p->nSimWords; w++ )
-            pSimCo[w] =  pSimDri[w];
-}
-static inline void Gia_ManObjSimAnd( Gia_Man_t * p, int iObj )
-{
-    int w;
-    Gia_Obj_t * pObj = Gia_ManObj( p, iObj );
-    word * pSim  = Gia_ManObjSim( p, iObj );
-    word * pSim0 = Gia_ManObjSim( p, Gia_ObjFaninId0(pObj, iObj) );
-    word * pSim1 = Gia_ManObjSim( p, Gia_ObjFaninId1(pObj, iObj) );
-    if ( Gia_ObjFaninC0(pObj) && Gia_ObjFaninC1(pObj) )
-        for ( w = 0; w < p->nSimWords; w++ )
-            pSim[w] = ~pSim0[w] & ~pSim1[w];
-    else if ( Gia_ObjFaninC0(pObj) && !Gia_ObjFaninC1(pObj) )
-        for ( w = 0; w < p->nSimWords; w++ )
-            pSim[w] = ~pSim0[w] & pSim1[w];
-    else if ( !Gia_ObjFaninC0(pObj) && Gia_ObjFaninC1(pObj) )
-        for ( w = 0; w < p->nSimWords; w++ )
-            pSim[w] = pSim0[w] & ~pSim1[w];
-    else
-        for ( w = 0; w < p->nSimWords; w++ )
-            pSim[w] = pSim0[w] & pSim1[w];
-}
-int Gia_ManSimulateWords( Gia_Man_t * p, int nWords )
-{
-    Gia_Obj_t * pObj; int i;
-    // allocate simulation info for one timeframe
-    Vec_WrdFreeP( &p->vSims );
-    p->vSims = Vec_WrdStart( Gia_ManObjNum(p) * nWords );
-    p->nSimWords = nWords;
-    // perform simulation
-    Gia_ManForEachObj1( p, pObj, i )
+    Vec_Int_t * vPoints = Vec_IntAlloc( 1000 );
+    Vec_Int_t * vQuads  = Vec_IntAlloc( 1000 );
+    Vec_Bit_t * vHeads  = Vec_BitStart( Gia_ManObjNum(p) );
+    Vec_Bit_t * vDatas  = Vec_BitStart( Gia_ManObjNum(p) );
+    Gia_Obj_t * pObj, * pCtrl, * pData0, * pData1;
+    Gia_Man_t * pNew = Gia_ManDup( p ); int i, iObj;
+    assert( Gia_ManRegNum(pNew) == 0 );
+    Gia_ManForEachAnd( pNew, pObj, i )
     {
-        if ( Gia_ObjIsAnd(pObj) )
-            Gia_ManObjSimAnd( p, i );
-        else if ( Gia_ObjIsCi(pObj) )
-            Gia_ManObjSimPi( p, i );
-        else if ( Gia_ObjIsCo(pObj) )
-            Gia_ManObjSimPo( p, i );
-        else assert( 0 );
+        if ( !Gia_ObjIsMuxType(pObj) )
+            continue;
+        pCtrl  = Gia_ObjRecognizeMux( pObj, &pData1, &pData0 );
+        pCtrl  = Gia_Regular(pCtrl);
+        pData0 = Gia_Regular(pData0);
+        pData1 = Gia_Regular(pData1);
+        Vec_IntPushTwo( vQuads, Gia_ObjId(pNew, pObj),   Gia_ObjId(pNew, pCtrl)  );
+        Vec_IntPushTwo( vQuads, Gia_ObjId(pNew, pData0), Gia_ObjId(pNew, pData1) );
+        Vec_BitWriteEntry( vHeads, Gia_ObjId(pNew, pObj),   1 );
+        Vec_BitWriteEntry( vDatas, Gia_ObjId(pNew, pData0), 1 );
+        Vec_BitWriteEntry( vDatas, Gia_ObjId(pNew, pData1), 1 );
     }
-    return 1;
-}
-
-
-/**Function*************************************************************
-
-  Synopsis    [Dump data files.]
-
-  Description []
-               
-  SideEffects []
-
-  SeeAlso     []
-
-***********************************************************************/
-void Gia_ManDumpFiles( Gia_Man_t * p, int nCexesT, int nCexesV )
-{
-    int n, nSize[2] = {nCexesT*64, nCexesV*64};
-
-    char pFileNameOutTX[100];
-    char pFileNameOutTY[100];
-    char pFileNameOutVX[100];
-    char pFileNameOutVY[100];
-    
-    sprintf( pFileNameOutTX, "data/%s_%d_%d.data", Gia_ManName(p), nSize[0], Gia_ManCiNum(p) );
-    sprintf( pFileNameOutTY, "data/%s_%d_%d.data", Gia_ManName(p), nSize[0], Gia_ManCoNum(p) );
-    sprintf( pFileNameOutVX, "data/%s_%d_%d.data", Gia_ManName(p), nSize[1], Gia_ManCiNum(p) );
-    sprintf( pFileNameOutVY, "data/%s_%d_%d.data", Gia_ManName(p), nSize[1], Gia_ManCoNum(p) );
-
-    Gia_ManRandomW( 1 );
-    for ( n = 0; n < 2; n++ )
+    Gia_ManForEachCo( pNew, pObj, i )
+        Gia_ObjFanin0(pObj)->fMark0 = 1;
+    for ( i = 0; i < Vec_IntSize(vQuads)/4; i++ )
     {
-        int Res = Gia_ManSimulateWords( p, nSize[n] );
-
-        Vec_Bit_t * vBitX = Vec_BitAlloc( nSize[n] * Gia_ManCiNum(p) );
-        Vec_Bit_t * vBitY = Vec_BitAlloc( nSize[n] * Gia_ManCoNum(p) );
-
-        FILE * pFileOutX  = fopen( n ? pFileNameOutVX : pFileNameOutTX, "wb" );
-        FILE * pFileOutY  = fopen( n ? pFileNameOutVY : pFileNameOutTY, "wb" );
-
-        int i, k, Id, Num, Value, nBytes;
-        for ( k = 0; k < nSize[n]; k++ )
+        int iObj   = Vec_IntEntry( vQuads, 4*i+0 );
+        int iCtrl  = Vec_IntEntry( vQuads, 4*i+1 );
+        int iData0 = Vec_IntEntry( vQuads, 4*i+2 );
+        int iData1 = Vec_IntEntry( vQuads, 4*i+3 );
+        if ( (Vec_BitEntry(vHeads, iObj)   && Vec_BitEntry(vDatas, iObj))   || 
+             (Vec_BitEntry(vHeads, iData0) && Vec_BitEntry(vDatas, iData0)) || 
+             (Vec_BitEntry(vHeads, iData1) && Vec_BitEntry(vDatas, iData1)) )
         {
-            Gia_ManForEachCiId( p, Id, i )
-            {
-                Vec_BitPush( vBitX, Abc_TtGetBit(Gia_ManObjSim(p, Id), k) );
-                //printf( "%d", Abc_TtGetBit(Gia_ManObjSim(p, Id), k) );
-            }
-            //printf( " " );
-            Gia_ManForEachCoId( p, Id, i )
-            {
-                Vec_BitPush( vBitY, Abc_TtGetBit(Gia_ManObjSim(p, Id), k) );
-                //printf( "%d", Abc_TtGetBit(Gia_ManObjSim(p, Id), k) );
-            }
-            //printf( "\n" );
+            Gia_Obj_t * pObj   = Gia_ManObj( p, iObj );
+            Gia_Obj_t * pCtrl  = Gia_ManObj( p, iCtrl );
+            Gia_Obj_t * pData0 = Gia_ManObj( p, iData0 );
+            Gia_Obj_t * pData1 = Gia_ManObj( p, iData1 );
+            if ( Gia_ObjIsAnd(pObj)   && !pObj->fMark0   )  Vec_IntPush( vPoints, iObj   );
+            if ( Gia_ObjIsAnd(pCtrl)  && !pCtrl->fMark0  )  Vec_IntPush( vPoints, iCtrl  );
+            if ( Gia_ObjIsAnd(pData0) && !pData0->fMark0 )  Vec_IntPush( vPoints, iData0 );
+            if ( Gia_ObjIsAnd(pData1) && !pData1->fMark0 )  Vec_IntPush( vPoints, iData1 );
         }
-        assert( Vec_BitSize(vBitX) <= Vec_BitCap(vBitX) );
-        assert( Vec_BitSize(vBitY) <= Vec_BitCap(vBitY) );
-
-        Num = 2;               Value = fwrite( &Num, 1, 4, pFileOutX ); assert( Value == 4 );
-        Num = nSize[n];        Value = fwrite( &Num, 1, 4, pFileOutX ); assert( Value == 4 );
-        Num = Gia_ManCiNum(p); Value = fwrite( &Num, 1, 4, pFileOutX ); assert( Value == 4 );
-
-        nBytes = nSize[n] * Gia_ManCiNum(p) / 8;
-        assert( nSize[n] * Gia_ManCiNum(p) % 8 == 0 );
-        Value = fwrite( Vec_BitArray(vBitX), 1, nBytes, pFileOutX );
-        assert( Value == nBytes );
-
-        Num = 2;               Value = fwrite( &Num, 1, 4, pFileOutY ); assert( Value == 4 );
-        Num = nSize[n];        Value = fwrite( &Num, 1, 4, pFileOutY ); assert( Value == 4 );
-        Num = Gia_ManCoNum(p); Value = fwrite( &Num, 1, 4, pFileOutY ); assert( Value == 4 );
-
-        nBytes = nSize[n] * Gia_ManCoNum(p) / 8;
-        assert( nSize[n] * Gia_ManCoNum(p) % 8 == 0 );
-        Value = fwrite( Vec_BitArray(vBitY), 1, nBytes, pFileOutY );
-        assert( Value == nBytes );
-
-        fclose( pFileOutX );
-        fclose( pFileOutY );
-
-        Vec_BitFree( vBitX );
-        Vec_BitFree( vBitY );
-
-        Res = 0;
     }
+    Gia_ManCleanMark0( pNew );
+    Vec_IntUniqify( vPoints );
+    Vec_IntForEachEntry( vPoints, iObj, i )
+        Gia_ManAppendCo( pNew, Abc_Var2Lit(iObj, 0) );
+    Vec_IntFree( vPoints );
+    Vec_IntFree( vQuads );
+    Vec_BitFree( vHeads );
+    Vec_BitFree( vDatas );
+    return pNew;
 }
+
 
 ////////////////////////////////////////////////////////////////////////
 ///                       END OF FILE                                ///

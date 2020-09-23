@@ -52,6 +52,7 @@ ABC_NAMESPACE_HEADER_START
 typedef struct Gia_MmFixed_t_        Gia_MmFixed_t;    
 typedef struct Gia_MmFlex_t_         Gia_MmFlex_t;     
 typedef struct Gia_MmStep_t_         Gia_MmStep_t;     
+typedef struct Gia_Dat_t_            Gia_Dat_t;
 
 typedef struct Gia_Rpr_t_ Gia_Rpr_t;
 struct Gia_Rpr_t_
@@ -208,6 +209,7 @@ struct Gia_Man_t_
     int            nSimWordsMax;
     Vec_Wrd_t *    vSims;
     Vec_Wrd_t *    vSimsPi;
+    Vec_Wrd_t *    vSimsPo;
     Vec_Int_t *    vClassOld;
     Vec_Int_t *    vClassNew;
     // incremental simulation
@@ -231,6 +233,7 @@ struct Gia_Man_t_
     Vec_Wrd_t *    vSuppWords;    // support information
     Vec_Int_t      vCopiesTwo;    // intermediate copies
     Vec_Int_t      vSuppVars;     // used variables
+    Gia_Dat_t *    pUserData;
 };
 
 
@@ -718,8 +721,8 @@ static inline int Gia_ManAppendXorReal( Gia_Man_t * p, int iLit0, int iLit1 )
     assert( iLit0 >= 0 && Abc_Lit2Var(iLit0) < Gia_ManObjNum(p) );
     assert( iLit1 >= 0 && Abc_Lit2Var(iLit1) < Gia_ManObjNum(p) );
     assert( Abc_Lit2Var(iLit0) != Abc_Lit2Var(iLit1) );
-    assert( !Abc_LitIsCompl(iLit0) );
-    assert( !Abc_LitIsCompl(iLit1) );
+    //assert( !Abc_LitIsCompl(iLit0) );
+    //assert( !Abc_LitIsCompl(iLit1) );
     if ( Abc_Lit2Var(iLit0) > Abc_Lit2Var(iLit1) )
     {
         pObj->iDiff0  = (unsigned)(Gia_ObjId(p, pObj) - Abc_Lit2Var(iLit0));
@@ -852,7 +855,6 @@ static inline int Gia_ManAppendXor2( Gia_Man_t * p, int iLit0, int iLit1 )
 
 static inline int Gia_ManAppendXorReal2( Gia_Man_t * p, int iLit0, int iLit1 )  
 { 
-    int fCompl;
     if ( !p->fGiaSimple )
     {
         if ( iLit0 < 2 )
@@ -864,8 +866,7 @@ static inline int Gia_ManAppendXorReal2( Gia_Man_t * p, int iLit0, int iLit1 )
         if ( iLit0 == Abc_LitNot(iLit1) )
             return 1;
     }
-    fCompl = Abc_LitIsCompl(iLit0) ^ Abc_LitIsCompl(iLit1);
-    return Abc_LitNotCond( Gia_ManAppendXorReal( p, Abc_LitRegular(iLit0), Abc_LitRegular(iLit1) ), fCompl );
+    return Gia_ManAppendXorReal( p, iLit0, iLit1 );
 }
 
 static inline void Gia_ManPatchCoDriver( Gia_Man_t * p, int iCoIndex, int iLit0 )  

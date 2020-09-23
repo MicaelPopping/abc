@@ -487,6 +487,8 @@ void Wln_RetRetimeForward( Wln_Ret_t * p, Vec_Int_t * vSet )
     Vec_IntForEachEntry( vSet, iObj, i )
     {
         iFlop = Wln_RetRemoveOneFanin( p, iObj );
+        if ( iFlop == -1 )
+            continue;
         Wln_RetInsertOneFanout( p, iObj, iFlop );
     }
 }
@@ -496,6 +498,8 @@ void Wln_RetRetimeBackward( Wln_Ret_t * p, Vec_Int_t * vSet )
     Vec_IntForEachEntry( vSet, iObj, i )
     {
         iFlop = Wln_RetRemoveOneFanout( p, iObj );
+        if ( iFlop == -1 )
+            continue;
         Wln_RetInsertOneFanin( p, iObj, iFlop );
     }
 }
@@ -538,13 +542,18 @@ void Wln_RetAddToMoves( Wln_Ret_t * p, Vec_Int_t * vSet, int Delay, int fForward
 ***********************************************************************/
 void Wln_NtkRetimeCreateDelayInfo( Wln_Ntk_t * pNtk )
 {
+    int i, iObj;
 //    if ( Wln_NtkHasInstId(pNtk) )
 //        Vec_IntErase( &pNtk->vInstIds );
     if ( Wln_NtkHasInstId(pNtk) )
+    {
         printf( "Using delays given by the user in the input file.\n" );
+        Wln_NtkForEachObj( pNtk, iObj )
+            if ( !Wln_ObjIsCio(pNtk, iObj) && !Wln_ObjIsConst(pNtk, iObj) && Wln_ObjInstId(pNtk, iObj) == 0 )
+                printf( "Warning: Object %d of type %s has zero delay. Retiming will not work correctly.\n", iObj, Abc_OperName(Wln_ObjType(pNtk, iObj)) );
+    }
     else
     {
-        int i, iObj;
         printf( "The design has no delay information.\n" );
         Wln_NtkCleanInstId(pNtk);
         Wln_NtkForEachObj( pNtk, iObj )

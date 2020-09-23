@@ -81,6 +81,8 @@ Gia_Man_t * Gia_ManStart( int nObjsMax )
 ***********************************************************************/
 void Gia_ManStop( Gia_Man_t * p )
 {
+    extern void Gia_DatFree( Gia_Dat_t * p );
+    Gia_DatFree( p->pUserData );
     if ( p->vSeqModelVec )
         Vec_PtrFreeFree( p->vSeqModelVec );
     Gia_ManStaticFanoutStop( p );
@@ -95,6 +97,7 @@ void Gia_ManStop( Gia_Man_t * p )
     Vec_IntFreeP( &p->vClassOld );
     Vec_WrdFreeP( &p->vSims );
     Vec_WrdFreeP( &p->vSimsPi );
+    Vec_WrdFreeP( &p->vSimsPo );
     Vec_IntFreeP( &p->vTimeStamps );
     Vec_FltFreeP( &p->vTiming );
     Vec_VecFreeP( &p->vClockDoms );
